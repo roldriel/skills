@@ -90,9 +90,14 @@ Required fields:
   "source_repository": "roldriel/argentos",
   "source_ref": "dist",
   "source_commit": "<observed commit>",
-  "installed_version": "<observed protocol version>"
+  "installed_version": "<observed protocol version>",
+  "payload_digest": "<sha256>",
+  "protocol_entry_digest": "<sha256>",
+  "adapter_digest": "<sha256>"
 }
 ~~~
+
+The digest fields are SHA-256 digests over the exact installed bytes defined by the script contract.
 
 The implementation may add fields only when they are explicitly defined by a future contract.
 
