@@ -1,60 +1,100 @@
 # ARgentOS Installation Methods
 
-ARgentOS is installed from "roldriel/argentos", branch "dist".
+ARgentOS is installed into a host project from `roldriel/argentos`, branch `dist`.
 
-The selected method controls how the "dist" payload is represented under "<project-root>/.argentos/.agents/".
+The canonical ARgentOS root is always:
 
-The skill must explain the options before asking the user to choose. The descriptions below are the baseline user-facing explanation.
+`<project-root>/.argentos`
 
-## 1. Git submodule
+The installation method controls how the protocol payload is represented under:
 
-Keeps the ARgentOS payload as a separate Git repository mounted inside the project.
+`<project-root>/.argentos/.agents/`
 
-**Advantages**
-- Keeps the ARgentOS payload clearly separated from the project's own history.
-- Makes the upstream ARgentOS repository and selected revision explicit.
-- Supports Git-based updates of the payload.
+## Installation scope
 
-**Trade-offs**
+ARgentOS installation is always project-scoped.
+
+There is no separate "general", "global", or user-wide ARgentOS installation mode in this contract.
+
+The Agent Skills installation of this skill may be global or project-local depending on the Skills manager. That is independent from ARgentOS installation and must not change the ARgentOS project layout.
+
+Therefore `/argentos install` must not ask the user to choose an installation scope.
+
+## Methods
+
+The user must choose exactly one of the following methods.
+
+### 1. Git submodule
+
+**Label:** `Git submodule`
+
+**Description:**
+
+Keeps the ARgentOS protocol payload as a separate Git repository mounted inside the project.
+
+**Advantages:**
+
+- Keeps the ARgentOS payload separate from the project's own Git history.
+- Makes the upstream repository and selected revision explicit.
+- Supports Git-based payload updates.
+
+**Trade-offs:**
+
 - Adds Git submodule management to the project.
-- The project now contains a nested repository relationship that users must understand when cloning or moving the project.
+- Cloning or moving the project requires normal submodule handling.
 
-## 2. Git tree
+### 2. Git tree
 
-Copies the ARgentOS payload into the project's Git history without creating a nested Git repository.
+**Label:** `Git tree`
 
-**Advantages**
+**Description:**
+
+Copies the ARgentOS protocol payload into the project's Git history without creating a nested Git repository.
+
+**Advantages:**
+
 - The payload becomes part of the project's normal Git history.
 - Avoids submodule mechanics.
-- Keeps the installed files directly available in the project repository.
+- Installed files are directly present in the project repository.
 
-**Trade-offs**
-- The payload is no longer represented as an independent Git repository inside the project.
-- Updating the payload requires an explicit synchronization/update operation.
+**Trade-offs:**
 
-## 3. Copy
+- The payload is no longer represented as an independent Git repository.
+- Payload updates require explicit synchronization.
 
-Copies the ARgentOS payload as ordinary files.
+### 3. Copy
 
-**Advantages**
+**Label:** `Copy`
+
+**Description:**
+
+Copies the ARgentOS protocol payload as ordinary files.
+
+**Advantages:**
+
 - Simplest filesystem model.
-- No Git submodule or nested repository is required.
-- Works for projects where Git integration is not desired.
+- Requires no Git submodule or nested repository.
+- Suitable when Git integration is not desired.
 
-**Trade-offs**
-- Updates require an explicit replacement/synchronization operation.
-- The installed payload is not automatically connected to the upstream Git repository.
+**Trade-offs:**
 
-## Scope
-
-Installation scope and payload method are separate choices.
-
-The user must first choose whether the operation applies to the current project or to a general installation context supported by ARgentOS. The meaning and implementation of the general scope must not change the canonical project location: when ARgentOS is installed in a project, its protocol root remains "<project-root>/.argentos".
+- Updates require explicit replacement or synchronization.
+- The installed payload is not automatically connected to the upstream repository.
 
 ## Selection UX
 
-Present the choices with their explanations before asking for a selection.
+Present the three methods in this exact order with their canonical labels and descriptions.
 
-Do not silently select a method because it is familiar to the agent.
+Use the selection format defined in `ux.md`.
 
-Do not assume that the user understands Git submodules, Git trees, or repository synchronization.
+Do not silently select a method.
+
+Do not rename, reorder, merge, or invent installation methods during normal operation.
+
+## Method persistence
+
+The selected method becomes part of the installed ARgentOS state.
+
+`update` must use the existing method and must not silently convert between methods.
+
+Changing methods is a separate future operation and is not part of the current command contract.
