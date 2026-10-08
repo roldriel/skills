@@ -1,96 +1,136 @@
 # ARgentOS Commands
 
-This document defines the initial user-facing contract for ARgentOS commands.
+This document defines the normative command contracts. User-facing wording is defined by `ux.md`.
+
+## Command routing
+
+| Command | Read-only | Mutation | Required confirmation |
+|---|---:|---:|---:|
+| `install` | No | Yes | Yes before mutation |
+| `check` | Yes | No | No |
+| `doctor` | No | Yes | Yes before repair |
+| `update` | No | Yes | Yes before update |
+| `uninstall` | No | Yes | Yes before uninstall and session deletion choice |
+| `version` | Yes | No | No |
+| `help` | Yes | No | No |
 
 ## install
 
-Installs ARgentOS into a host project.
-
-Before installation:
+### Preconditions
 
 1. Resolve the project root.
-2. Run a check of the current ARgentOS state.
-3. If the project is already installed, partially installed, previously uninstalled with preserved sessions, or otherwise actionable, explain the detected state and offer the appropriate actions.
-4. If a fresh installation is appropriate, ask for the installation scope and then the installation method.
-5. Explain each available option before asking the user to choose.
-6. Explain the changes that will be made before performing them.
+2. If the root cannot be resolved, stop with `PROJECT_ROOT_UNRESOLVED`.
+3. Run the equivalent of `check`.
+4. Classify the current lifecycle state before proposing installation.
 
-The installation source is "roldriel/argentos", branch "dist".
+### Fresh installation
 
-The canonical project location is "<project-root>/.argentos".
+A fresh installation is allowed only when the current state is `NOT_INSTALLED`.
+
+The skill must:
+
+1. Present the installation scope choices defined by `installation-methods.md`.
+2. Explain each choice using its canonical description.
+3. Ask for one scope selection.
+4. Present the installation methods using their canonical descriptions.
+5. Ask for one method selection.
+6. Explain the planned changes using the canonical confirmation template.
+7. Obtain confirmation.
+8. Perform the installation.
+9. Verify the resulting state.
+10. Report the verified result.
+
+If scope semantics are not defined by the current contract, do not present or invent a scope choice. Stop with an explicit specification gap rather than guessing.
+
+### Existing or actionable state
+
+If the state is `INSTALLED`, `INSTALLED_WITH_DRIFT`, `INCOMPLETE`, `UNINSTALLED_WITH_SESSIONS`, `BROKEN`, or `UNKNOWN`, do not start a fresh installation.
+
+Report the detected state and offer only actions permitted by `lifecycle.md`.
 
 ## check
 
-Read-only diagnostic operation.
+`check` is strictly read-only.
 
-It must inspect the project and report the detected ARgentOS state without changing files, Git configuration, sessions, or project metadata.
+It must not modify:
 
-The check should distinguish at least:
-
-- not installed;
-- installed and healthy;
-- installed with drift or detected problems;
-- incomplete installation;
-- uninstalled with preserved sessions;
-- broken or inconsistent state;
-- unknown or ambiguous state.
-
-## doctor
-
-Diagnoses and repairs ARgentOS problems.
-
-Before making repairs, explain that the operation will modify the project/system and summarize the intended repair actions.
-
-After repair, verify the resulting state with a new check.
-
-## update
-
-Updates an existing ARgentOS installation.
-
-Before making changes:
-
-1. Determine the current state and installed version.
-2. Explain what will be changed.
-3. Warn that the operation modifies the project/system.
-4. Obtain the required confirmation.
-5. Update using the installation method already configured for the installation.
-6. Preserve adopter-local configuration and persistent state according to the lifecycle contract.
-7. Verify the resulting state.
-
-## uninstall
-
-Removes ARgentOS from the project.
-
-Before making changes:
-
-1. Explain what will be removed or restored.
-2. Ask the user to confirm the uninstall.
-3. Ask whether preserved sessions should be kept or deleted.
-4. Perform the selected cleanup/restoration.
-5. Verify the resulting state.
-
-The original adopter artifacts displaced during installation must be handled according to the backup/layout contract; they must not be silently discarded.
-
-## version
-
-Report the ARgentOS version relevant to the current project or installed payload.
-
-If there is no installed project context, report that clearly rather than inventing an installed version.
-
-## help
-
-Show the available commands and a concise description of each.
-
-Help must not modify the project.
-
-## bare invocation
-
-"/argentos" without a command is equivalent to requesting interactive help.
+- project files;
+- Git configuration;
+- submodules;
+- sessions;
+- project metadata;
+- backups;
+- configuration.
 
 It must:
 
-1. Show the available commands.
-2. Briefly describe what each command does.
-3. Ask the user which operation they want.
+1. Resolve the project root.
+2. Inspect the expected ARgentOS layout.
+3. Determine the lifecycle state.
+4. Determine the command result.
+5. Report the verified state.
 
-It must not begin installation, inspection, repair, update, or uninstall automatically.
+If state cannot be determined reliably, use `STATE = UNKNOWN` and the appropriate error identifier.
+
+## doctor
+
+1. Run `check`.
+2. If no repair is needed, return `REPAIR_NOT_NEEDED`.
+3. If repair is possible, identify the exact repair actions.
+4. Use the canonical repair confirmation.
+5. Perform only the approved repair actions.
+6. Run `check` again.
+7. Report the verified resulting state.
+
+If automatic repair would require an unsupported assumption, stop with `REPAIR_UNSAFE`.
+
+## update
+
+1. Run `check`.
+2. Require an existing usable installation.
+3. Determine the installed version and installation method.
+4. Determine whether an update is needed.
+5. If no update is needed, return `UPDATE_NOT_NEEDED`.
+6. Explain the planned changes.
+7. Obtain confirmation.
+8. Update using the existing installation method.
+9. Preserve adopter-local configuration and persistent state according to `layout.md`.
+10. Run `check`.
+11. Report the verified resulting state and version.
+
+Do not silently change installation methods during an update.
+
+## uninstall
+
+1. Run `check`.
+2. Require a state for which uninstall is meaningful.
+3. Explain what will be removed and what may be restored.
+4. Obtain uninstall confirmation.
+5. Ask the session-preservation question defined by `ux.md`.
+6. Perform only the selected action.
+7. Verify the resulting state.
+8. Report the verified result.
+
+A backup conflict must stop restoration rather than silently overwrite the conflicting artifact.
+
+## version
+
+Report only a version actually available from the current project context.
+
+If no installed project version can be established, return `VERSION_UNAVAILABLE`. Never infer a version from memory or from a different repository.
+
+## help
+
+Display the canonical command menu from `ux.md`.
+
+Help is read-only.
+
+## bare invocation
+
+`/argentos` without a command is equivalent to interactive help.
+
+It must:
+
+1. Show the canonical command menu.
+2. Ask which operation the user wants.
+3. Perform no operation until the user selects one.
