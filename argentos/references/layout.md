@@ -18,6 +18,7 @@ After adoption:
     ├── features.toml
     ├── .agents/
     ├── .project/
+    │   └── install.json
     └── .backup/
         ├── _AGENTS.md
         ├── _agents/
@@ -52,7 +53,9 @@ Adopter/runtime state.
 
 It may contain persistent project state and preserved sessions.
 
-It is never replaced merely because the protocol payload is updated.
+The skill-owned `install.json` records installation method and installation metadata required for deterministic lifecycle operations. It must not contain user secrets.
+
+The directory is never replaced merely because the protocol payload is updated.
 
 ### `.argentos/features.toml`
 
@@ -70,7 +73,30 @@ Permitted artifacts:
 - `_agents/` — original project-root `.agents/`;
 - `_gitignore` — original project-root `.gitignore`, only when displaced.
 
-Do not store protocol state, manifests, logs, sessions, configuration, or arbitrary generated files here.
+Do not store protocol state, manifests, logs, sessions, configuration, or arbitrary generated files here. The installation manifest belongs in `.project/install.json`.
+
+## Installation manifest
+
+The canonical path is:
+
+`.argentos/.project/install.json`
+
+Required fields:
+
+~~~json
+{
+  "schema_version": 1,
+  "method": "submodule | git_tree | copy",
+  "source_repository": "roldriel/argentos",
+  "source_ref": "dist",
+  "source_commit": "<observed commit>",
+  "installed_version": "<observed protocol version>"
+}
+~~~
+
+The implementation may add fields only when they are explicitly defined by a future contract.
+
+The manifest is managed state. It is not user configuration.
 
 ## Backup rules
 
@@ -80,7 +106,7 @@ If present before adoption:
 
 1. Move it to `.argentos/.backup/_AGENTS.md`.
 2. Do not merge its contents with the ARgentOS adapter.
-3. The operation must record that it was displaced.
+3. Record that it was displaced.
 4. Uninstall may restore it only if the destination is absent.
 
 ### Original root `.agents/`
