@@ -29,18 +29,15 @@ A fresh installation is allowed only when the current state is `NOT_INSTALLED`.
 
 The skill must:
 
-1. Present the installation scope choices defined by `installation-methods.md`.
-2. Explain each choice using its canonical description.
-3. Ask for one scope selection.
-4. Present the installation methods using their canonical descriptions.
-5. Ask for one method selection.
-6. Explain the planned changes using the canonical confirmation template.
-7. Obtain confirmation.
-8. Perform the installation.
-9. Verify the resulting state.
-10. Report the verified result.
+1. Present the three installation methods using their canonical descriptions.
+2. Ask for one method selection.
+3. Explain the planned changes using the canonical confirmation template.
+4. Obtain confirmation.
+5. Perform the installation.
+6. Verify the resulting state.
+7. Report the verified result.
 
-If scope semantics are not defined by the current contract, do not present or invent a scope choice. Stop with an explicit specification gap rather than guessing.
+If the selected method is unavailable, return `INSTALL_METHOD_UNSUPPORTED` and do not mutate the project.
 
 ### Existing or actionable state
 
@@ -52,23 +49,16 @@ Report the detected state and offer only actions permitted by `lifecycle.md`.
 
 `check` is strictly read-only.
 
-It must not modify:
-
-- project files;
-- Git configuration;
-- submodules;
-- sessions;
-- project metadata;
-- backups;
-- configuration.
+It must not modify project files, Git configuration, submodules, sessions, project metadata, backups, or configuration.
 
 It must:
 
 1. Resolve the project root.
 2. Inspect the expected ARgentOS layout.
-3. Determine the lifecycle state.
-4. Determine the command result.
-5. Report the verified state.
+3. Determine the installation method when an installed state is detected.
+4. Determine the lifecycle state.
+5. Determine the command result.
+6. Report the verified state.
 
 If state cannot be determined reliably, use `STATE = UNKNOWN` and the appropriate error identifier.
 
