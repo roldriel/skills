@@ -11,7 +11,7 @@ RESULT = <result>
 STATE = <state>
 ```
 
-Mutating commands must also report whether the post-operation verification passed.
+Mutating commands must also report whether post-operation verification passed.
 
 The agent must not invent result identifiers. If a required result cannot be determined, use `RESULT = UNKNOWN` and explain why.
 
@@ -92,7 +92,7 @@ A successful command must not imply a healthy state unless the state itself was 
 For `install`, `doctor`, `update`, and `uninstall`:
 
 1. Perform the requested mutation.
-2. Run the applicable post-operation verification.
+2. Run applicable post-operation verification.
 3. Determine the resulting lifecycle state.
 4. Emit the result only from the verified outcome.
 
@@ -106,7 +106,6 @@ The following fields may be included when known:
 - `ARGENTOS_ROOT`
 - `VERSION`
 - `METHOD`
-- `SCOPE`
 - `CHANGED_FILES`
 - `RESTORED_FILES`
 - `PRESERVED_SESSIONS`
