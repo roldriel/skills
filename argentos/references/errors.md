@@ -23,18 +23,18 @@ This document defines canonical failure and clarification identifiers and their 
 - `INSTALL_INCOMPLETE` — an incomplete installation requires recovery handling.
 - `INSTALL_STATE_AMBIGUOUS` — current state cannot safely be classified.
 - `INSTALL_METHOD_UNSUPPORTED` — selected installation method is unavailable.
-- `INSTALL_SCOPE_UNSUPPORTED` — selected installation scope is unavailable.
 
 ### Runtime state
 
 - `STATE_UNKNOWN` — lifecycle state cannot be determined.
 - `STATE_INCONSISTENT` — observed artifacts contradict the expected layout/state.
 - `STATE_BROKEN` — required ARgentOS components are damaged or unusable.
+- `STATE_NOT_INSTALLED` — no installed ARgentOS instance exists for a command that requires one.
 
 ### Update/repair
 
 - `UPDATE_SOURCE_UNAVAILABLE` — the required update source cannot be reached or read.
-- `UPDATE_METHOD_MISMATCH` — the installed representation cannot be updated using the requested method.
+- `UPDATE_METHOD_MISMATCH` — the installed representation cannot be updated using its recorded method.
 - `REPAIR_UNSAFE` — automatic repair would require an unsupported or destructive assumption.
 
 ### Uninstall
