@@ -19,10 +19,10 @@ The agent must not invent result identifiers. If a required result cannot be det
 
 ### Check
 
-- `CHECK_PASS` — expected state detected and no problems found.
-- `CHECK_WARN` — state is usable but requires attention.
-- `CHECK_FAIL` — state is broken or inconsistent.
-- `CHECK_UNKNOWN` — state cannot be determined reliably.
+- `CHECK_PASS`
+- `CHECK_WARN`
+- `CHECK_FAIL`
+- `CHECK_UNKNOWN`
 
 ### Install
 
@@ -32,6 +32,7 @@ The agent must not invent result identifiers. If a required result cannot be det
 
 ### Doctor
 
+- `REPAIR_PLAN_READY` — internal planning result; no mutation occurred.
 - `REPAIR_COMPLETE`
 - `REPAIR_NOT_NEEDED`
 - `REPAIR_BLOCKED`
@@ -106,6 +107,8 @@ The following fields may be included when known:
 - `ARGENTOS_ROOT`
 - `VERSION`
 - `METHOD`
+- `DRIFT`
+- `REPAIRED`
 - `CHANGED_FILES`
 - `RESTORED_FILES`
 - `PRESERVED_SESSIONS`
@@ -116,4 +119,4 @@ Only values actually observed or computed by the operation may be reported.
 
 Human-readable output must use the templates in `ux.md`.
 
-The result/state envelope is the authoritative structured summary. Prose must not contradict it.
+The result/state envelope is authoritative. Prose must not contradict it.
