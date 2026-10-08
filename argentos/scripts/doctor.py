@@ -11,13 +11,12 @@ import tempfile
 from pathlib import Path
 
 from check import classify
-from common import paths, resolve_project_root
-from install import SOURCE_URL, load_template, run_git, write_manifest
+from common import load_json, paths, resolve_project_root, sha256_file, sha256_tree
+from install import SOURCE_URL, load_template, run_git
 
 
 SAFE_ACTIONS = {
     "refresh_payload",
-    "refresh_protocol_entry",
     "refresh_adapter",
 }
 
@@ -25,11 +24,7 @@ SAFE_ACTIONS = {
 def propose(root: Path) -> dict:
     state = classify(root)
     if state["state"] == "INSTALLED":
-        return {
-            "result": "REPAIR_NOT_NEEDED",
-            "state": "INSTALLED",
-            "plan": [],
-        }
+        return {"result": "REPAIR_NOT_NEEDED", "state": "INSTALLED", "plan": []}
     if state["state"] != "INSTALLED_WITH_DRIFT":
         return {
             "result": "REPAIR_BLOCKED",
@@ -38,12 +33,10 @@ def propose(root: Path) -> dict:
             "plan": [],
         }
 
-    actions = []
     drift = set(state.get("DRIFT", []))
-    if "payload_digest" in drift or "installed_version" in drift:
+    actions = []
+    if {"payload_digest", "installed_version", "protocol_entry_digest"} & drift:
         actions.append("refresh_payload")
-    if "protocol_entry_digest" in drift:
-        actions.append("refresh_protocol_entry")
     if "adapter_digest" in drift:
         actions.append("refresh_adapter")
 
@@ -84,8 +77,7 @@ def replace_payload(source: Path, payload: Path) -> None:
 
 
 def execute(root: Path, actions: list[str]) -> dict:
-    invalid = [action for action in actions if action not in SAFE_ACTIONS]
-    if invalid:
+    if any(action not in SAFE_ACTIONS for action in actions):
         return {
             "result": "REPAIR_BLOCKED",
             "state": classify(root)["state"],
@@ -101,13 +93,28 @@ def execute(root: Path, actions: list[str]) -> dict:
         }
 
     p = paths(root)
+    manifest, error = load_json(p["manifest"])
+    if error or manifest is None:
+        return {
+            "result": "REPAIR_BLOCKED",
+            "state": before["state"],
+            "ERROR": "REPAIR_UNSAFE",
+        }
+
+    if "refresh_payload" not in actions and "protocol_entry_digest" in set(before.get("DRIFT", [])):
+        return {
+            "result": "REPAIR_BLOCKED",
+            "state": before["state"],
+            "ERROR": "REPAIR_UNSAFE",
+        }
+
     temp = None
     try:
-        temp, commit = prepare_source()
-        source = temp / "source"
-        method = before["METHOD"]
-
         if "refresh_payload" in actions:
+            temp, commit = prepare_source()
+            source = temp / "source"
+            method = before["METHOD"]
+
             if method == "submodule":
                 status = run_git(["-C", str(p["payload_root"]), "status", "--porcelain"])
                 if status:
@@ -117,13 +124,19 @@ def execute(root: Path, actions: list[str]) -> dict:
             else:
                 replace_payload(source, p["payload_root"])
 
-        if "refresh_protocol_entry" in actions:
             shutil.copy2(source / "AGENTS.md", p["protocol_entry"])
+
+            manifest["source_commit"] = commit
+            manifest["installed_version"] = p["version"].read_text(encoding="utf-8").strip()
+            manifest["payload_digest"] = sha256_tree(p["payload_root"])
+            manifest["protocol_entry_digest"] = sha256_file(p["protocol_entry"])
 
         if "refresh_adapter" in actions:
             p["adapter"].write_text(load_template(), encoding="utf-8")
 
-        write_manifest(p, method, commit)
+        manifest["adapter_digest"] = sha256_file(p["adapter"])
+        p["manifest"].write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
         after = classify(root)
         if after["state"] != "INSTALLED":
             return {
