@@ -42,6 +42,15 @@ def load_template() -> str:
     return path.read_text(encoding="utf-8")
 
 
+def validate_backup_destinations(root: Path, backup: Path) -> None:
+    for source, destination in (
+        (root / "AGENTS.md", backup / "_AGENTS.md"),
+        (root / ".agents", backup / "_agents"),
+    ):
+        if source.exists() and destination.exists():
+            raise InstallError("STATE_INCONSISTENT", f"backup destination exists: {destination}")
+
+
 def backup_existing(root: Path, p: dict[str, Path]) -> None:
     backup = p["backup_root"]
     backup.mkdir(parents=True, exist_ok=True)
@@ -134,15 +143,16 @@ def main() -> int:
         if args.method == "submodule" and not (root / ".git").exists():
             raise InstallError("INSTALL_METHOD_UNSUPPORTED", "git submodule requires a Git worktree")
 
+        validate_backup_destinations(root, p["backup_root"])
+        if p["payload_root"].exists():
+            raise InstallError("STATE_INCONSISTENT", "payload destination already exists")
+
         p["argentos_root"].mkdir(parents=True, exist_ok=True)
         p["project_state_root"].mkdir(parents=True, exist_ok=True)
         p["backup_root"].mkdir(parents=True, exist_ok=True)
-
         backup_existing(root, p)
 
         payload = p["payload_root"]
-        if payload.exists():
-            raise InstallError("STATE_INCONSISTENT", "payload destination already exists")
         if args.method == "submodule":
             resolved_commit = materialize_submodule(payload, root)
         elif args.method == "git_tree":
