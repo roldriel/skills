@@ -176,3 +176,8 @@ Automatic rollback is not permitted unless explicitly defined by the command con
 - `5` — verification could not establish the expected result.
 
 The JSON result remains authoritative; exit codes provide process-level classification.
+
+
+## Doctor planning
+
+`doctor.py --propose` returns `REPAIR_PLAN_READY` with a deterministic `plan` array. The agent must present that plan to the user and obtain confirmation before invoking `doctor.py --plan PLAN.json`.
