@@ -6,13 +6,12 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 from check import classify
-from common import paths, resolve_project_root, sha256_file, sha256_tree
+from common import paths, resolve_project_root
 from install import SOURCE_URL, run_git, write_manifest
 
 
@@ -28,22 +27,24 @@ def prepare_source() -> tuple[Path, str]:
         raise
 
 
-def update_submodule(root: Path, payload: Path) -> str:
+def update_submodule(root: Path, payload: Path, target_commit: str) -> str:
     status = run_git(["-C", str(payload), "status", "--porcelain"])
     if status:
         raise RuntimeError("UPDATE_LOCAL_CHANGES")
-    run_git(["submodule", "update", "--remote", "--checkout", "--", str(payload.relative_to(root))], root)
+    run_git(["-C", str(payload), "fetch", "origin", "dist"])
+    run_git(["-C", str(payload), "checkout", "--detach", target_commit])
+    run_git(["add", str(payload.relative_to(root))], root)
     return run_git(["-C", str(payload), "rev-parse", "HEAD"])
 
 
 def replace_payload(source: Path, payload: Path) -> None:
     next_payload = payload.parent / ".agents.next"
+    old_payload = payload.parent / ".agents.previous"
     if next_payload.exists():
         shutil.rmtree(next_payload)
-    shutil.copytree(source / ".agents", next_payload)
-    old_payload = payload.parent / ".agents.previous"
     if old_payload.exists():
         shutil.rmtree(old_payload)
+    shutil.copytree(source / ".agents", next_payload)
     payload.rename(old_payload)
     try:
         next_payload.rename(payload)
@@ -97,7 +98,7 @@ def main() -> int:
             return 0
 
         if method == "submodule":
-            resolved_commit = update_submodule(root, p["payload_root"])
+            resolved_commit = update_submodule(root, p["payload_root"], target_commit)
         elif method in ("git_tree", "copy"):
             replace_payload(source, p["payload_root"])
             if method == "git_tree":
@@ -125,7 +126,7 @@ def main() -> int:
             "VERSION": version,
         }, sort_keys=True))
         return 0
-    except (OSError, KeyError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+    except (OSError, KeyError, ValueError, RuntimeError) as exc:
         after = classify(root)
         error_id = str(exc) if str(exc) in {
             "UPDATE_LOCAL_CHANGES",
