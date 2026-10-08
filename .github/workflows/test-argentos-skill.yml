@@ -1,0 +1,24 @@
+name: Test ARgentOS Skill
+
+on:
+  push:
+    branches:
+      - dev
+      - master
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Compile scripts
+        run: python -m compileall -q argentOS/scripts
+
+      - name: Run tests
+        run: python -m unittest discover -s argentOS/tests -p "test_*.py"
