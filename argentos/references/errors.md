@@ -35,6 +35,7 @@ This document defines canonical failure and clarification identifiers and their 
 
 - `UPDATE_SOURCE_UNAVAILABLE` — the required update source cannot be reached or read.
 - `UPDATE_METHOD_MISMATCH` — the installed representation cannot be updated using its recorded method.
+- `UPDATE_LOCAL_CHANGES` — the managed submodule contains local changes and must not be overwritten automatically.
 - `REPAIR_UNSAFE` — automatic repair would require an unsupported or destructive assumption.
 - `ADAPTER_CONFLICT` — the generated project adapter differs from the recorded installed adapter.
 
