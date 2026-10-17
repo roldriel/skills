@@ -134,6 +134,53 @@ Consumer workflow
 
 does not imply that either skill depends on the other.
 
+### 8.1 Optional Capability References
+
+A member skill MAY reference another skill as an **optional capability provider** when that skill provides a complementary capability that may improve the current task.
+
+An optional capability reference:
+
+- MUST identify the referenced skill name;
+- MUST identify its distributor and source repository;
+- MUST identify the capability for which it is recommended;
+- MUST NOT create a runtime or installation dependency;
+- MUST NOT make the referenced skill a precondition for the current skill's contract.
+
+The canonical unambiguous reference form is:
+
+```text
+<owner>/<repository>:<skill-name>
+```
+
+For example:
+
+```text
+roldriel/skills:github-projects
+```
+
+A skill MUST NOT rely on a skill name alone when multiple distributors may provide skills with the same name.
+
+### 8.2 Optional Capability Behavior
+
+When an optional capability is relevant:
+
+- If the referenced skill is available, the current skill SHOULD use or defer to it for the explicitly identified capability.
+- If the referenced skill is unavailable, the current skill MUST continue using its own fallback behavior.
+- The absence of the referenced skill MUST NOT be treated as an error unless the current task itself is impossible without that capability.
+- Installation or activation of the referenced skill MUST require explicit user approval.
+- A skill SHOULD recommend installation only when the missing capability materially improves the current task.
+- Recommendations SHOULD be compact and task-specific rather than presenting a general skill catalog.
+
+Recommended output form:
+
+```text
+> Optional skill: `roldriel/skills:github-projects` can improve this task
+> by providing direct GitHub Projects operations and verification.
+> It is not required. Install it?
+```
+
+An optional skill recommendation is informational and does not grant authority to install, activate, or mutate another skill.
+
 ## 9. Compatibility with Agent Skills
 
 Skill Family is an additive convention over Agent Skills.
