@@ -472,3 +472,16 @@ Load these lazily, only when the workflow phase requires them:
 | Confidence assignment model (Phase 8) | `references/confidence-model.md` |
 
 Workflow and decision-making rules in this file take precedence over examples in references.
+
+
+---
+
+## Conformance
+
+Use `tests/conformance.md` as the normative evaluation suite for this skill.
+
+When changing commit-boundary, classification, incremental-state, size-threshold, breaking-change, or optional-companion behavior, update the affected conformance cases in the same change.
+
+A conformance case must specify the observable input and the expected agent behavior.
+
+Do not consider prose changes validated merely because the file was updated; the relevant cases must remain consistent with the skill contract.
