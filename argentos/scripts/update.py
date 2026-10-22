@@ -33,8 +33,13 @@ def update_submodule(root: Path, payload: Path, target_commit: str) -> str:
         raise RuntimeError("UPDATE_LOCAL_CHANGES")
     run_git(["-C", str(payload), "fetch", "origin", "dist"])
     run_git(["-C", str(payload), "checkout", "--detach", target_commit])
+    actual_commit = run_git(["-C", str(payload), "rev-parse", "HEAD"])
+    if actual_commit != target_commit:
+        raise RuntimeError(
+            f"VERIFICATION_FAILED: expected {target_commit}, got {actual_commit}"
+        )
     run_git(["add", str(payload.relative_to(root))], root)
-    return run_git(["-C", str(payload), "rev-parse", "HEAD"])
+    return actual_commit
 
 
 def replace_payload(source: Path, payload: Path) -> None:
