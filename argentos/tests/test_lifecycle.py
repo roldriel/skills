@@ -3,7 +3,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -15,6 +15,30 @@ from check import classify
 
 
 class LifecycleScriptTests(unittest.TestCase):
+    def test_submodule_install_checks_out_pre_resolved_commit(self):
+        root = Path(tempfile.mkdtemp())
+        (root / ".git").mkdir()
+        payload = root / ".argentos" / ".agents"
+        payload.parent.mkdir(parents=True)
+        target_commit = "d" * 40
+        observed = iter(["", target_commit])
+
+        with patch.object(install, "run_git", side_effect=lambda args, cwd=None: next(observed)) as run_git:
+            result = install.materialize_submodule(payload, root, target_commit)
+
+        self.assertEqual(result, target_commit)
+        self.assertEqual(
+            run_git.call_args_list,
+            [
+                call(
+                    ["submodule", "add", "--branch", "dist", install.SOURCE_URL, ".argentos/.agents"],
+                    root,
+                ),
+                call(["-C", str(payload), "checkout", "--detach", target_commit]),
+                call(["-C", str(payload), "rev-parse", "HEAD"]),
+            ],
+        )
+
     def make_source(self, version: str) -> tuple[Path, str]:
         temp = Path(tempfile.mkdtemp())
         source = temp / "source"
