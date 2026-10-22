@@ -97,7 +97,13 @@ def materialize_submodule(payload: Path, root: Path, target_commit: str) -> str:
         raise InstallError("INSTALL_METHOD_UNSUPPORTED", "git submodule requires a Git worktree")
     run_git(["submodule", "add", "--branch", "dist", SOURCE_URL, str(payload.relative_to(root))], root)
     run_git(["-C", str(payload), "checkout", "--detach", target_commit])
-    return run_git(["-C", str(payload), "rev-parse", "HEAD"])
+    actual_commit = run_git(["-C", str(payload), "rev-parse", "HEAD"])
+    if actual_commit != target_commit:
+        raise InstallError(
+            "VERIFICATION_FAILED",
+            f"submodule commit mismatch: expected {target_commit}, got {actual_commit}",
+        )
+    return actual_commit
 
 
 def write_manifest(p: dict[str, Path], method: str, commit: str) -> None:
