@@ -21,23 +21,65 @@ class LifecycleScriptTests(unittest.TestCase):
         payload = root / ".argentos" / ".agents"
         payload.parent.mkdir(parents=True)
         target_commit = "d" * 40
-        observed = iter(["", "", target_commit])
 
-        with patch.object(install, "run_git", side_effect=lambda args, cwd=None: next(observed)) as run_git:
+        def run_git(args, cwd=None):
+            if args[:3] == ["submodule", "add", "--branch"]:
+                return ""
+            if args[:4] == ["-C", str(payload), "checkout", "--detach"]:
+                self.assertEqual(args[4], target_commit)
+                return ""
+            if args == ["-C", str(payload), "rev-parse", "HEAD"]:
+                return target_commit
+            self.fail(f"unexpected git invocation: {args!r}")
+
+        with patch.object(install, "run_git", side_effect=run_git) as run_git_mock:
             result = install.materialize_submodule(payload, root, target_commit)
 
         self.assertEqual(result, target_commit)
         self.assertEqual(
-            run_git.call_args_list,
+            run_git_mock.call_args_list,
             [
                 call(
-                    ["submodule", "add", "--branch", "dist", install.SOURCE_URL, ".argentos/.agents"],
+                    [
+                        "submodule",
+                        "add",
+                        "--branch",
+                        "dist",
+                        install.SOURCE_URL,
+                        str(payload.relative_to(root)),
+                    ],
                     root,
                 ),
                 call(["-C", str(payload), "checkout", "--detach", target_commit]),
                 call(["-C", str(payload), "rev-parse", "HEAD"]),
             ],
         )
+
+    def test_submodule_install_rejects_commit_mismatch(self):
+        root = Path(tempfile.mkdtemp())
+        (root / ".git").mkdir()
+        payload = root / ".argentos" / ".agents"
+        payload.parent.mkdir(parents=True)
+        target_commit = "d" * 40
+        actual_commit = "e" * 40
+
+        def run_git(args, cwd=None):
+            if args[:3] == ["submodule", "add", "--branch"]:
+                return ""
+            if args[:4] == ["-C", str(payload), "checkout", "--detach"]:
+                self.assertEqual(args[4], target_commit)
+                return ""
+            if args == ["-C", str(payload), "rev-parse", "HEAD"]:
+                return actual_commit
+            self.fail(f"unexpected git invocation: {args!r}")
+
+        with patch.object(install, "run_git", side_effect=run_git):
+            with self.assertRaises(install.InstallError) as ctx:
+                install.materialize_submodule(payload, root, target_commit)
+
+        self.assertEqual(ctx.exception.error, "VERIFICATION_FAILED")
+        self.assertIn(target_commit, str(ctx.exception))
+        self.assertIn(actual_commit, str(ctx.exception))
 
     def make_source(self, version: str) -> tuple[Path, str]:
         temp = Path(tempfile.mkdtemp())
