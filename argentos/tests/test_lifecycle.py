@@ -21,7 +21,7 @@ class LifecycleScriptTests(unittest.TestCase):
         payload = root / ".argentos" / ".agents"
         payload.parent.mkdir(parents=True)
         target_commit = "d" * 40
-        observed = iter(["", target_commit])
+        observed = iter(["", "", target_commit])
 
         with patch.object(install, "run_git", side_effect=lambda args, cwd=None: next(observed)) as run_git:
             result = install.materialize_submodule(payload, root, target_commit)
