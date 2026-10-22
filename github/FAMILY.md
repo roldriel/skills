@@ -237,6 +237,30 @@ The workflow may create or update an Issue and then place or update its represen
 
 Neither skill depends on the other. The consumer is responsible for sequencing and composition.
 
+### 9.1 Optional Companion Skills
+
+A GitHub family member MAY recommend another skill as an optional companion capability.
+
+When making such a recommendation, the skill MUST identify both the skill and its distributor/source repository.
+
+Use the canonical form:
+
+```text
+<owner>/<repository>:<skill-name>
+```
+
+For example:
+
+```text
+roldriel/skills:github-pull-requests
+```
+
+If the recommended skill is available, the current skill SHOULD use or defer to it for the explicitly identified capability.
+
+If it is unavailable, the current skill MUST continue without treating its absence as an error.
+
+Installation or activation MUST NOT be implied. A recommendation MAY be emitted only when the missing capability materially improves the current task, using the family-level compact recommendation format.
+
 ## 10. Consumer Boundary
 
 The GitHub family provides operational capability, not decision authority.
