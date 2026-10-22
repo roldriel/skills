@@ -92,10 +92,11 @@ def materialize_tree(source: Path, payload: Path, root: Path) -> None:
     run_git(["add", str(payload.relative_to(root)), str((root / ".argentos").relative_to(root))], root)
 
 
-def materialize_submodule(payload: Path, root: Path) -> str:
+def materialize_submodule(payload: Path, root: Path, target_commit: str) -> str:
     if not (root / ".git").exists():
         raise InstallError("INSTALL_METHOD_UNSUPPORTED", "git submodule requires a Git worktree")
     run_git(["submodule", "add", "--branch", "dist", SOURCE_URL, str(payload.relative_to(root))], root)
+    run_git(["-C", str(payload), "checkout", "--detach", target_commit])
     return run_git(["-C", str(payload), "rev-parse", "HEAD"])
 
 
@@ -154,7 +155,7 @@ def main() -> int:
 
         payload = p["payload_root"]
         if args.method == "submodule":
-            resolved_commit = materialize_submodule(payload, root)
+            resolved_commit = materialize_submodule(payload, root, commit)
         elif args.method == "git_tree":
             materialize_tree(source, payload, root)
             resolved_commit = commit
