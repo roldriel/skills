@@ -81,6 +81,68 @@ class LifecycleScriptTests(unittest.TestCase):
         self.assertIn(target_commit, str(ctx.exception))
         self.assertIn(actual_commit, str(ctx.exception))
 
+    def test_submodule_update_checks_out_and_verifies_target_commit(self):
+        root = Path(tempfile.mkdtemp())
+        payload = root / ".argentos" / ".agents"
+        payload.parent.mkdir(parents=True)
+        target_commit = "f" * 40
+
+        def run_git(args, cwd=None):
+            if args[:4] == ["-C", str(payload), "status", "--porcelain"]:
+                return ""
+            if args == ["-C", str(payload), "fetch", "origin", "dist"]:
+                return ""
+            if args[:4] == ["-C", str(payload), "checkout", "--detach"]:
+                self.assertEqual(args[4], target_commit)
+                return ""
+            if args == ["-C", str(payload), "rev-parse", "HEAD"]:
+                return target_commit
+            if args == ["add", str(payload.relative_to(root))]:
+                return ""
+            self.fail(f"unexpected git invocation: {args!r}")
+
+        with patch.object(update, "run_git", side_effect=run_git) as run_git_mock:
+            result = update.update_submodule(root, payload, target_commit)
+
+        self.assertEqual(result, target_commit)
+        self.assertEqual(
+            run_git_mock.call_args_list,
+            [
+                call(["-C", str(payload), "status", "--porcelain"]),
+                call(["-C", str(payload), "fetch", "origin", "dist"]),
+                call(["-C", str(payload), "checkout", "--detach", target_commit]),
+                call(["-C", str(payload), "rev-parse", "HEAD"]),
+                call(["add", str(payload.relative_to(root))], root),
+            ],
+        )
+
+    def test_submodule_update_rejects_commit_mismatch(self):
+        root = Path(tempfile.mkdtemp())
+        payload = root / ".argentos" / ".agents"
+        payload.parent.mkdir(parents=True)
+        target_commit = "f" * 40
+        actual_commit = "e" * 40
+
+        def run_git(args, cwd=None):
+            if args[:4] == ["-C", str(payload), "status", "--porcelain"]:
+                return ""
+            if args == ["-C", str(payload), "fetch", "origin", "dist"]:
+                return ""
+            if args[:4] == ["-C", str(payload), "checkout", "--detach"]:
+                self.assertEqual(args[4], target_commit)
+                return ""
+            if args == ["-C", str(payload), "rev-parse", "HEAD"]:
+                return actual_commit
+            self.fail(f"unexpected git invocation: {args!r}")
+
+        with patch.object(update, "run_git", side_effect=run_git):
+            with self.assertRaises(RuntimeError) as ctx:
+                update.update_submodule(root, payload, target_commit)
+
+        self.assertIn("VERIFICATION_FAILED", str(ctx.exception))
+        self.assertIn(target_commit, str(ctx.exception))
+        self.assertIn(actual_commit, str(ctx.exception))
+
     def make_source(self, version: str) -> tuple[Path, str]:
         temp = Path(tempfile.mkdtemp())
         source = temp / "source"

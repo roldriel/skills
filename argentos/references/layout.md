@@ -21,11 +21,8 @@ After adoption:
     │   └── install.json
     └── .backup/
         ├── _AGENTS.md
-        ├── _agents/
-        └── _gitignore
+        └── _agents/
 ~~~
-
-`_gitignore` exists only when the original project `.gitignore` was displaced as part of installation.
 
 ## Ownership
 
@@ -71,7 +68,6 @@ Permitted artifacts:
 
 - `_AGENTS.md` — original project-root `AGENTS.md`;
 - `_agents/` — original project-root `.agents/`;
-- `_gitignore` — original project-root `.gitignore`, only when displaced.
 
 Do not store protocol state, manifests, logs, sessions, configuration, or arbitrary generated files here. The installation manifest belongs in `.project/install.json`.
 
@@ -121,16 +117,6 @@ If present before adoption:
 1. Move it to `.argentos/.backup/_agents/`.
 2. Do not merge it with the ARgentOS payload.
 3. Uninstall may restore it only if the destination is absent.
-
-### Original root `.gitignore`
-
-If the installation flow replaces it:
-
-1. Move it to `.argentos/.backup/_gitignore`.
-2. Preserve its bytes exactly.
-3. Uninstall may restore it only if the destination is absent.
-
-If no replacement occurs, do not create a backup copy.
 
 ## Backup conflicts
 
