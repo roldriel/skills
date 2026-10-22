@@ -90,7 +90,7 @@ class LifecycleScriptTests(unittest.TestCase):
         def run_git(args, cwd=None):
             if args[:4] == ["-C", str(payload), "status", "--porcelain"]:
                 return ""
-            if args[:4] == ["-C", str(payload), "fetch", "origin", "dist"]:
+            if args == ["-C", str(payload), "fetch", "origin", "dist"]:
                 return ""
             if args[:4] == ["-C", str(payload), "checkout", "--detach"]:
                 self.assertEqual(args[4], target_commit)
